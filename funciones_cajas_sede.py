@@ -62,6 +62,58 @@ def detectar_fila_encabezados_cajas_sede(df_raw):
 # ---------------------------------------------------------
 # CARGAR ASC – CAJAS – SEDE
 # ---------------------------------------------------------
+def cargar_asc_cajas_sede(archivo_asc):
+
+    df_raw = pd.read_excel(archivo_asc, sheet_name="Reporte", header=None)
+    fila = detectar_fila_encabezados_cajas_sede(df_raw)
+
+    df = pd.read_excel(
+        archivo_asc,
+        sheet_name="Reporte",
+        header=fila
+    )
+
+    df.columns = [limpiar(c) for c in df.columns]
+
+    obligatorias = [
+        "SEDE OPERATIVA",
+        "TIPO",
+        "TOTAL INVENTARIO IMPRENTA",
+        "INGRESO",
+        "SALIDA",
+    ]
+
+    faltan = [c for c in obligatorias if c not in df.columns]
+    if faltan:
+        raise ValueError(f"Faltan columnas obligatorias en ASC - CAJAS SEDE: {faltan}")
+
+    df["SEDE OPERATIVA"] = df["SEDE OPERATIVA"].apply(limpiar)
+    df["TIPO"] = df["TIPO"].apply(limpiar)
+
+    return df
+
+
+# ---------------------------------------------------------
+# CLASIFICAR TIPO
+# ---------------------------------------------------------
+def clasificar_tipo(tipo):
+    t = limpiar(tipo)
+
+    if "APLIC" in t:
+        return "INSTRUMENTO"
+
+    if "ADIC" in t:
+        return "ADICIONAL"
+
+    if "CAND" in t:
+        return "CANDADO"
+
+    return None
+
+
+# ---------------------------------------------------------
+# GENERAR CAJAS-SEDE
+# ---------------------------------------------------------
 def generar_cajas_sede(ruta_plantilla_temp, archivo_asc_cajas_sede):
 
     try:
@@ -201,3 +253,4 @@ def generar_cajas_sede(ruta_plantilla_temp, archivo_asc_cajas_sede):
 
     except Exception as e:
         st.error(f"Error al generar CAJAS-SEDE: {e}")
+
